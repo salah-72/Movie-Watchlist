@@ -4,9 +4,21 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx watch src/index.ts",
+    "postinstall": "prisma skills sync || exit 0"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@apollo/server": "^5.5.1",
+    "@prisma/client": "^7.10.0",
+    "graphql": "^16.14.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "prisma": "^8.0.0-rc.15",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
 }
