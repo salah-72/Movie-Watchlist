@@ -7,8 +7,38 @@ datasource db {
   provider = "postgresql"
 }
 
-model User{
-  id        String    @id @default(uuid())
-  email     String    @unique
-  password  String 
+model User {
+  id        String          @id @default(uuid())
+  email     String          @unique
+  password  String
+  watchlist WatchlistItem[]
+}
+
+model Movie {
+  id       String          @id @default(uuid())
+  title    String
+  year     Int?
+  genre    String?
+  overview String?
+  items    WatchlistItem[]
+}
+
+model WatchlistItem {
+  id      String      @id @default(uuid())
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  String
+  movie   Movie       @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId String
+  rating  Float?
+  notes   String?
+  addedAt DateTime    @default(now())
+  status  WatchStatus @default(WANT_TO_WATCH)
+
+  @@unique([userId, movieId])
+}
+
+enum WatchStatus {
+  WANT_TO_WATCH
+  WATCHING
+  WATCHED
 }
