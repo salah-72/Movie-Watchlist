@@ -1,5 +1,4 @@
 node_modules
-.claude/
-.cursor/
-.agents/
-.devin/
+.env
+generated
+package-lock.json
