@@ -9,13 +9,13 @@ export const typeDefs = `#graphql
 
 
     type Query {
-        movies: [Movie!]!
+        movies(search: String, genre: String): [Movie!]!
         movie(id: ID!): Movie
     }
 
     type Mutation {
-        addMovie(title: String!, year: Int, genre: String): Movie!
+        addMovie(title: String!, year: Int, genre: String, overview: String): Movie!
         deleteMovie(id: ID!): Movie!
-        updateMovie(id: ID!, title: String, year: Int, genre: String): Movie!
+        updateMovie(id: ID!, title: String, year: Int, genre: String, overview: String): Movie!
     }
     `;
