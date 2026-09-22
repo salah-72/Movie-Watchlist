@@ -15,5 +15,7 @@ export const typeDefs = `#graphql
 
     type Mutation {
         addMovie(title: String!, year: Int, genre: String): Movie!
+        deleteMovie(id: ID!): Movie!
+        updateMovie(id: ID!, title: String, year: Int, genre: String): Movie!
     }
     `;
