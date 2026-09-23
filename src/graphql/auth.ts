@@ -12,8 +12,11 @@ export const hashPassword = (password: string) => bcrypt.hash(password, 10);
 export const verifyPassword = (password: string, hash: string) =>
   bcrypt.compare(password, hash);
 
-export const signToken = (userId: string) =>
-  jwt.sign(userId, JWT_SECRET, { expiresIn: '7d' });
+export const signToken = (userId: string) => {
+  return jwt.sign({ userId: userId }, process.env.JWT_SECRET!, {
+    expiresIn: '7d',
+  });
+};
 
 export const getUserId = (token: string): string | null => {
   try {
