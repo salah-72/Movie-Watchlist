@@ -6,6 +6,19 @@ import { Prisma, WatchStatus } from '@/generated/prisma';
 const badInput = (message: string) =>
   new GraphQLError(message, { extensions: { code: 'BAD_USER_INPUT' } });
 
+const getItem = async (ctx: Context, itemId: string) => {
+  const userId = requireAuth(ctx);
+  const item = await ctx.prisma.watchlistItem.findFirst({
+    where: { id: itemId, userId },
+  });
+  if (!item) {
+    throw new GraphQLError('Watchlist item not found', {
+      extensions: { code: 'NOT_FOUND' },
+    });
+  }
+  return item;
+};
+
 interface authArgs {
   email: string;
   password: string;
@@ -149,7 +162,17 @@ export const resolvers = {
       }
     },
 
-    // updateWatchStatus:
+    updateWatchStatus: async (
+      _parent: unknown,
+      { itemId, status }: { itemId: string; status: WatchStatus },
+      ctx: Context,
+    ) => {
+      await getItem(ctx, itemId);
+      return ctx.prisma.watchlistItem.update({
+        where: { id: itemId },
+        data: { status },
+      });
+    },
   },
 
   User: {
