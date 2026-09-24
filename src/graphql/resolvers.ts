@@ -1,7 +1,7 @@
 import { GraphQLError } from 'graphql';
 import { hashPassword, requireAuth, signToken, verifyPassword } from './auth';
 import { Context } from './context';
-import { Prisma } from '@/generated/prisma';
+import { Prisma, WatchStatus } from '@/generated/prisma';
 
 const badInput = (message: string) =>
   new GraphQLError(message, { extensions: { code: 'BAD_USER_INPUT' } });
@@ -54,13 +54,6 @@ export const resolvers = {
       const userId = requireAuth(ctx);
       return ctx.prisma.user.findUnique({
         where: { id: userId },
-        include: {
-          watchlist: {
-            include: {
-              movie: true,
-            },
-          },
-        },
       });
     },
   },
@@ -145,7 +138,6 @@ export const resolvers = {
             userId,
             movieId,
           },
-          include: { movie: true },
         });
       } catch (e) {
         if (e instanceof Prisma.PrismaClientKnownRequestError) {
@@ -158,5 +150,30 @@ export const resolvers = {
     },
 
     // updateWatchStatus:
+  },
+
+  User: {
+    watchlist: (
+      parent: { id: string },
+      args: { status?: WatchStatus | null },
+      ctx: Context,
+    ) => {
+      return ctx.prisma.watchlistItem.findMany({
+        where: {
+          userId: parent.id,
+          ...(args.status && { status: args.status }),
+        },
+        orderBy: { addedAt: 'desc' },
+      });
+    },
+  },
+
+  WatchlistItem: {
+    movie: (parent: { movieId: string }, _: unknown, ctx: Context) => {
+      return ctx.prisma.movie.findUniqueOrThrow({
+        where: { id: parent.movieId },
+      });
+    },
+    addedAt: (parent: { addedAt: Date }) => parent.addedAt.toISOString(),
   },
 };
