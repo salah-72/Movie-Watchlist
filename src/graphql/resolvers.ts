@@ -173,6 +173,31 @@ export const resolvers = {
         data: { status },
       });
     },
+
+    rateMovie: async (
+      _parent: unknown,
+      { itemId, rating }: { itemId: string; rating: number },
+      ctx: Context,
+    ) => {
+      if (!Number.isInteger(rating) || rating < 1 || rating > 10) {
+        throw badInput('Rating must be an integer between 1 and 10');
+      }
+      await getItem(ctx, itemId);
+      return ctx.prisma.watchlistItem.update({
+        where: { id: itemId },
+        data: { rating },
+      });
+    },
+
+    removeFromWatchlist: async (
+      _parent: unknown,
+      { itemId }: { itemId: string },
+      ctx: Context,
+    ) => {
+      await getItem(ctx, itemId);
+      await ctx.prisma.watchlistItem.delete({ where: { id: itemId } });
+      return true;
+    },
   },
 
   User: {
