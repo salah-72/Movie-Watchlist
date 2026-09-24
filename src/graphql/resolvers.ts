@@ -1,6 +1,7 @@
 import { GraphQLError } from 'graphql';
 import { hashPassword, requireAuth, signToken, verifyPassword } from './auth';
 import { Context } from './context';
+import { Prisma } from '@/generated/prisma';
 
 const badInput = (message: string) =>
   new GraphQLError(message, { extensions: { code: 'BAD_USER_INPUT' } });
@@ -10,7 +11,7 @@ interface authArgs {
   password: string;
 }
 interface movieArgs {
-  id: string;
+  movieId: string;
 }
 
 interface AddMovieArgs {
@@ -45,13 +46,22 @@ export const resolvers = {
       });
     },
 
-    movie: async (_: unknown, { id }: movieArgs, ctx: Context) => {
-      return ctx.prisma.movie.findUnique({ where: { id } });
+    movie: async (_: unknown, { movieId }: movieArgs, ctx: Context) => {
+      return ctx.prisma.movie.findUnique({ where: { id: movieId } });
     },
 
     me: async (_: unknown, __: unknown, ctx: Context) => {
       const userId = requireAuth(ctx);
-      return ctx.prisma.user.findUnique({ where: { id: userId } });
+      return ctx.prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          watchlist: {
+            include: {
+              movie: true,
+            },
+          },
+        },
+      });
     },
   },
 
@@ -93,21 +103,26 @@ export const resolvers = {
     addMovie: async (
       _: unknown,
       { title, year, genre, overview }: AddMovieArgs,
-      { prisma }: Context,
+      ctx: Context,
     ) => {
-      return prisma.movie.create({ data: { title, genre, year, overview } });
+      requireAuth(ctx);
+      return ctx.prisma.movie.create({
+        data: { title, genre, year, overview },
+      });
     },
 
-    deleteMovie: async (_: unknown, { id }: movieArgs, { prisma }: Context) => {
-      return prisma.movie.delete({ where: { id } });
+    deleteMovie: async (_: unknown, { movieId }: movieArgs, ctx: Context) => {
+      requireAuth(ctx);
+      return ctx.prisma.movie.delete({ where: { id: movieId } });
     },
 
     updateMovie: async (
       _: unknown,
       { id, title, year, genre, overview }: updateMovieArgs,
-      { prisma }: Context,
+      ctx: Context,
     ) => {
-      return prisma.movie.update({
+      requireAuth(ctx);
+      return ctx.prisma.movie.update({
         where: { id },
         data: {
           ...(title !== undefined && { title }),
@@ -117,5 +132,31 @@ export const resolvers = {
         },
       });
     },
+
+    addToWatchlist: async (
+      _: unknown,
+      { movieId }: movieArgs,
+      ctx: Context,
+    ) => {
+      const userId = requireAuth(ctx);
+      try {
+        return await ctx.prisma.watchlistItem.create({
+          data: {
+            userId,
+            movieId,
+          },
+          include: { movie: true },
+        });
+      } catch (e) {
+        if (e instanceof Prisma.PrismaClientKnownRequestError) {
+          if (e.code === 'P2002')
+            throw badInput('Movie already in your watchlist');
+          if (e.code === 'P2003') throw badInput('Movie does not exist');
+        }
+        throw e;
+      }
+    },
+
+    // updateWatchStatus:
   },
 };

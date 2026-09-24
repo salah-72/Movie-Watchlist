@@ -45,8 +45,8 @@ export const typeDefs = `#graphql
         login(email: String!, password: String!): AuthPayload!
 
         addMovie(title: String!, year: Int, genre: String, overview: String): Movie!
-        deleteMovie(id: ID!): Movie!
-        updateMovie(id: ID!, title: String, year: Int, genre: String, overview: String): Movie!
+        deleteMovie(movieId: ID!): Movie!
+        updateMovie(movieId: ID!, title: String, year: Int, genre: String, overview: String): Movie!
 
         addToWatchlist(movieId: ID!): WatchlistItem
         updateWatchStatus(itemId: ID!, status: WatchStatus!): WatchlistItem!
