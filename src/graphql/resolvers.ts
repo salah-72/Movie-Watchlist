@@ -217,11 +217,20 @@ export const resolvers = {
   },
 
   WatchlistItem: {
-    movie: (parent: { movieId: string }, _: unknown, ctx: Context) => {
-      return ctx.prisma.movie.findUniqueOrThrow({
-        where: { id: parent.movieId },
-      });
+    movie: async (parent: { movieId: string }, _: unknown, ctx: Context) => {
+      const movie = await ctx.loaders.movieById.load(parent.movieId);
+      if (!movie) {
+        throw new GraphQLError('Movie not found', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+      return movie;
     },
     addedAt: (parent: { addedAt: Date }) => parent.addedAt.toISOString(),
+  },
+
+  Movie: {
+    watchlistCount: (parent: { id: string }, _args: unknown, ctx: Context) =>
+      ctx.loaders.watchlistCountByMovieId.load(parent.id),
   },
 };

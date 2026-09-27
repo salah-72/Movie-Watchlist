@@ -11,6 +11,7 @@ export const typeDefs = `#graphql
         year: Int
         genre: String
         overview: String
+        watchlistCount: Int!
     }
 
     type WatchlistItem {
