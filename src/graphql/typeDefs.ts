@@ -20,7 +20,7 @@ export const typeDefs = `#graphql
         status: WatchStatus!
         rating: Int
         notes: String
-        addedAt: String
+        addedAt: String!
     }
 
 
@@ -49,7 +49,7 @@ export const typeDefs = `#graphql
         deleteMovie(movieId: ID!): Movie!
         updateMovie(movieId: ID!, title: String, year: Int, genre: String, overview: String): Movie!
 
-        addToWatchlist(movieId: ID!): WatchlistItem
+        addToWatchlist(movieId: ID!): WatchlistItem!
         updateWatchStatus(itemId: ID!, status: WatchStatus!): WatchlistItem!
         rateMovie(itemId: ID!, rating: Int!): WatchlistItem!
         removeFromWatchlist(itemId: ID!): Boolean!

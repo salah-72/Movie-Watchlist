@@ -19,14 +19,6 @@ const getItem = async (ctx: Context, itemId: string) => {
   return item;
 };
 
-interface authArgs {
-  email: string;
-  password: string;
-}
-interface movieArgs {
-  movieId: string;
-}
-
 interface AddMovieArgs {
   title: string;
   year?: number;
@@ -59,8 +51,8 @@ export const resolvers = {
       });
     },
 
-    movie: async (_: unknown, { movieId }: movieArgs, ctx: Context) => {
-      return ctx.prisma.movie.findUnique({ where: { id: movieId } });
+    movie: async (_: unknown, { id }: { id: string }, ctx: Context) => {
+      return ctx.prisma.movie.findUnique({ where: { id } });
     },
 
     me: async (_: unknown, __: unknown, ctx: Context) => {
@@ -74,7 +66,7 @@ export const resolvers = {
   Mutation: {
     register: async (
       _: unknown,
-      { email, password }: authArgs,
+      { email, password }: { email: string; password: string },
       ctx: Context,
     ) => {
       if (password.length < 8)
@@ -93,7 +85,11 @@ export const resolvers = {
       return { token: signToken(user.id), user };
     },
 
-    login: async (_: unknown, { email, password }: authArgs, ctx: Context) => {
+    login: async (
+      _: unknown,
+      { email, password }: { email: string; password: string },
+      ctx: Context,
+    ) => {
       const user = await ctx.prisma.user.findUnique({
         where: { email: email.trim().toLowerCase() },
       });
@@ -117,9 +113,9 @@ export const resolvers = {
       });
     },
 
-    deleteMovie: async (_: unknown, { movieId }: movieArgs, ctx: Context) => {
+    deleteMovie: async (_: unknown, { id }: { id: string }, ctx: Context) => {
       requireAuth(ctx);
-      return ctx.prisma.movie.delete({ where: { id: movieId } });
+      return ctx.prisma.movie.delete({ where: { id } });
     },
 
     updateMovie: async (
@@ -141,7 +137,7 @@ export const resolvers = {
 
     addToWatchlist: async (
       _: unknown,
-      { movieId }: movieArgs,
+      { movieId }: { movieId: string },
       ctx: Context,
     ) => {
       const userId = requireAuth(ctx);

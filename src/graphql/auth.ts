@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { GraphQLError } from 'graphql';
-
 import env from '@/config/env';
 import { Context } from './context';
 
