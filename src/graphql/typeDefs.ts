@@ -35,8 +35,24 @@ export const typeDefs = `#graphql
         user: User!
     }
 
+    type MovieEdge {
+        cursor: String!
+        node: Movie!
+    }
+
+    type PageInfo {
+        hasNextPage: Boolean!
+        endCursor: String
+    }
+
+    type MovieConnection {
+        edges: [MovieEdge!]!
+        pageInfo: PageInfo!
+        totalCount: Int!
+    }
+
     type Query {
-        movies(search: String, genre: String): [Movie!]!
+        movies(search: String, genre: String, first: Int = 10, after: String): MovieConnection!
         movie(id: ID!): Movie
         me: User
     }
