@@ -2,6 +2,7 @@ import { GraphQLError } from 'graphql';
 import { hashPassword, requireAuth, signToken, verifyPassword } from './auth';
 import { Context } from './context';
 import { Prisma, WatchStatus } from '@/generated/prisma';
+import { decodeCursor, encodeCursor } from './pagination';
 
 const badInput = (message: string) =>
   new GraphQLError(message, { extensions: { code: 'BAD_USER_INPUT' } });
@@ -38,17 +39,46 @@ export const resolvers = {
   Query: {
     movies: async (
       _: unknown,
-      args: { search?: string | null; genre?: string | null },
+      args: {
+        search?: string | null;
+        genre?: string | null;
+        first: number;
+        after?: string | null;
+      },
       ctx: Context,
     ) => {
-      return ctx.prisma.movie.findMany({
-        where: {
-          ...(args.search && {
-            title: { contains: args.search, mode: 'insensitive' },
-          }),
-          ...(args.genre && { genre: args.genre }),
-        },
+      const { first, after } = args;
+      if (first < 1 || first > 50) {
+        throw badInput('first must be between 1 and 50');
+      }
+
+      const where: Prisma.MovieWhereInput = {
+        ...(args.search && {
+          title: { contains: args.search, mode: 'insensitive' },
+        }),
+        ...(args.genre && { genre: args.genre }),
+      };
+
+      const rows = await ctx.prisma.movie.findMany({
+        where,
+        orderBy: [{ title: 'asc' }, { id: 'asc' }],
+        take: first + 1,
+        ...(after && { cursor: { id: decodeCursor(after) }, skip: 1 }),
       });
+
+      const hasNextPage = rows.length > first;
+      const nodes = hasNextPage ? rows.slice(0, first) : rows;
+
+      return {
+        edges: nodes.map((node) => ({ cursor: encodeCursor(node.id), node })),
+        pageInfo: {
+          hasNextPage,
+          endCursor: nodes.length
+            ? encodeCursor(nodes[nodes.length - 1].id)
+            : null,
+        },
+        where,
+      };
     },
 
     movie: async (_: unknown, { id }: { id: string }, ctx: Context) => {
@@ -228,5 +258,13 @@ export const resolvers = {
   Movie: {
     watchlistCount: (parent: { id: string }, _args: unknown, ctx: Context) =>
       ctx.loaders.watchlistCountByMovieId.load(parent.id),
+  },
+
+  MovieConnection: {
+    totalCount: (
+      parent: { where: Prisma.MovieWhereInput },
+      _args: unknown,
+      ctx: Context,
+    ) => ctx.prisma.movie.count({ where: parent.where }),
   },
 };
