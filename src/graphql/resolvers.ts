@@ -2,7 +2,7 @@ import { GraphQLError } from 'graphql';
 import { hashPassword, requireAuth, signToken, verifyPassword } from './auth';
 import { Context } from './context';
 import { Prisma, WatchStatus } from '@/generated/prisma';
-import { decodeCursor, encodeCursor } from './pagination';
+import { decodeCursor, encodeCursor, paginate } from './pagination';
 
 const badInput = (message: string) =>
   new GraphQLError(message, { extensions: { code: 'BAD_USER_INPUT' } });
@@ -47,11 +47,6 @@ export const resolvers = {
       },
       ctx: Context,
     ) => {
-      const { first, after } = args;
-      if (first < 1 || first > 50) {
-        throw badInput('first must be between 1 and 50');
-      }
-
       const where: Prisma.MovieWhereInput = {
         ...(args.search && {
           title: { contains: args.search, mode: 'insensitive' },
@@ -59,26 +54,15 @@ export const resolvers = {
         ...(args.genre && { genre: args.genre }),
       };
 
-      const rows = await ctx.prisma.movie.findMany({
-        where,
-        orderBy: [{ title: 'asc' }, { id: 'asc' }],
-        take: first + 1,
-        ...(after && { cursor: { id: decodeCursor(after) }, skip: 1 }),
-      });
+      const page = await paginate(args.first, args.after, (p) =>
+        ctx.prisma.movie.findMany({
+          where,
+          orderBy: [{ title: 'asc' }, { id: 'asc' }],
+          ...p,
+        }),
+      );
 
-      const hasNextPage = rows.length > first;
-      const nodes = hasNextPage ? rows.slice(0, first) : rows;
-
-      return {
-        edges: nodes.map((node) => ({ cursor: encodeCursor(node.id), node })),
-        pageInfo: {
-          hasNextPage,
-          endCursor: nodes.length
-            ? encodeCursor(nodes[nodes.length - 1].id)
-            : null,
-        },
-        where,
-      };
+      return { ...page, where };
     },
 
     movie: async (_: unknown, { id }: { id: string }, ctx: Context) => {
