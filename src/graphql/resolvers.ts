@@ -211,18 +211,29 @@ export const resolvers = {
   },
 
   User: {
-    watchlist: (
+    watchlist: async (
       parent: { id: string },
-      args: { status?: WatchStatus | null },
+      args: {
+        status?: WatchStatus | null;
+        first: number;
+        after?: string | null;
+      },
       ctx: Context,
     ) => {
-      return ctx.prisma.watchlistItem.findMany({
-        where: {
-          userId: parent.id,
-          ...(args.status && { status: args.status }),
-        },
-        orderBy: { addedAt: 'desc' },
-      });
+      const where: Prisma.WatchlistItemWhereInput = {
+        userId: parent.id,
+        ...(args.status && { status: args.status }),
+      };
+
+      const page = await paginate(args.first, args.after, (p) =>
+        ctx.prisma.watchlistItem.findMany({
+          where,
+          orderBy: [{ addedAt: 'desc' }, { id: 'desc' }],
+          ...p,
+        }),
+      );
+
+      return { ...page, where };
     },
   },
 
@@ -250,5 +261,13 @@ export const resolvers = {
       _args: unknown,
       ctx: Context,
     ) => ctx.prisma.movie.count({ where: parent.where }),
+  },
+
+  WatchlistConnection: {
+    totalCount: (
+      parent: { where: Prisma.WatchlistItemWhereInput },
+      _args: unknown,
+      ctx: Context,
+    ) => ctx.prisma.watchlistItem.count({ where: parent.where }),
   },
 };
