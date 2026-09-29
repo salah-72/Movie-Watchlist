@@ -27,7 +27,7 @@ export const typeDefs = `#graphql
     type User {
         id: ID!
         email: String!
-        watchlist(status: WatchStatus): [WatchlistItem!]!
+        watchlist(status: WatchStatus, first: Int! = 10, after: String): WatchlistConnection!
     }
 
     type AuthPayload {
@@ -47,6 +47,17 @@ export const typeDefs = `#graphql
 
     type MovieConnection {
         edges: [MovieEdge!]!
+        pageInfo: PageInfo!
+        totalCount: Int!
+    }
+
+    type WatchlistItemEdge {
+        cursor: String!
+        node: WatchlistItem!
+    }
+
+    type WatchlistConnection {
+        edges: [WatchlistItemEdge!]!
         pageInfo: PageInfo!
         totalCount: Int!
     }
