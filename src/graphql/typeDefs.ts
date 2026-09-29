@@ -52,7 +52,7 @@ export const typeDefs = `#graphql
     }
 
     type Query {
-        movies(search: String, genre: String, first: Int = 10, after: String): MovieConnection!
+        movies(search: String, genre: String, first: Int! = 10, after: String): MovieConnection!
         movie(id: ID!): Movie
         me: User
     }
